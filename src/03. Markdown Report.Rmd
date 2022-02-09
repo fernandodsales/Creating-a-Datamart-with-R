@@ -1,0 +1,254 @@
+---
+title: "Marketing Data Manual"
+author: "Fernando Delgado, Nithesh Ramanna, and Aazad Ghoslya"
+date: "Dec 19, 2021"
+output:
+  html_document:
+    df_print: paged
+---
+
+
+```{r include=FALSE}
+
+library(dplyr)
+library(data.table)
+library(ggplot2)
+library(tidyr)
+library(tidyverse)
+library(maps)
+library(readr)
+library(sf)
+library(shinythemes)
+
+datamart <- fread("~/Group Assignment - Team 13/data/processed/datamart.csv")
+
+
+```
+
+# Gambler's Datamart
+  
+  This is an overall summary The objective of this analysis is to display customer insights with a marketing scope. This analysis was made with 3 different datasets: Customer's Demographics, Daily Aggregations, and Poker Chips Conversions. They were all merged with a granularity of 1 unique User ID per row. 
+  
+In total, there are `r ncol(datamart)` columns with `r length(unique(datamart$UserID))` unique users in the datamart, as shown in the next overview.
+
+## Data overview
+
+```{r}
+head(datamart)
+
+```
+
+```{r echo=FALSE}
+
+unique <- length(unique(datamart$UserID))
+print(paste("Unique User IDs: ", unique, sep=))
+
+```
+
+## General User Overview
+First, the following graphs will show a general demographic view for the company's users. The majority of the users are Male while the preferred language is German:  
+
+```{r echo=FALSE, warning=FALSE, figures-side, fig.show="hold", out.width="50%"}
+
+ggplot(datamart,aes(x = Gender, color = Gender, fill = Gender))+
+      geom_bar()+
+      ggtitle("Gender Ratio")
+
+ggplot(datamart,aes(x = Language))+
+      geom_bar()+
+      theme(axis.text.x=element_text(angle=90, hjust=1))+
+      ggtitle('Languages spoken by users')
+```
+
+## Users by Location
+The majority of the users are located in Europe, where Germany has the highest population: 
+
+```{r echo=FALSE, fig.align = 'center'}
+
+countries <- datamart %>% group_by(Country) %>% summarise(count= n()) %>% rename(region = Country)
+      
+world_map <- map_data('world')
+      
+world_map2 <- world.cities %>% filter(capital==1)%>%  rename(region = country.etc)
+users_in_world = merge(countries, world_map2, by = 'region')
+      
+ggplot() +
+  geom_polygon(data = world_map, aes(x=long, y = lat, group = group), fill="black", alpha=1)+
+  geom_point( data=users_in_world, aes(x=long, y=lat, size=count), color = 'green') + coord_fixed(1.3)
+
+```
+
+The following countries have more than 1000 Users: 
+
+```{r echo=FALSE, fig.align = 'center'}
+
+countries <- datamart %>% group_by(Country) %>% summarise(count= n()) %>% rename(region = Country)
+      
+      ggplot(countries %>% filter(count > 1000), aes(x = region, y = count))+
+        geom_col()+
+        scale_x_discrete(name = 'Country')+
+        scale_y_continuous(name = 'Number of Users')+
+        ggtitle('Countries with more than 1000 users')
+
+```
+
+## Application Usage
+The top Applications used for gambling are:
+
+```{r echo=FALSE, fig.align = 'center'}
+
+ggplot(datamart, aes(x = Application))+
+      geom_bar()+
+      theme(axis.text.x=element_text(angle=90, hjust=1))
+
+```
+
+## Total Aggregations
+By taking a look at the total aggregations of the full database we can observe the total cost versus the total revenue:
+
+```{r echo=FALSE, fig.align = 'center'}
+
+#Total stakes per products
+      x <- datamart %>% pivot_longer(cols = c(TotalStakes_Product1, TotalStakes_Product2,TotalStakes_Product4,
+                                              TotalStakes_Product5, TotalStakes_Product6, TotalStakes_Product7, 
+                                              TotalStakes_Product8, ), names_to = "var", values_to = "val")
+      x$val[is.na(x$val)] <- 0
+      x <- x %>% group_by(var) %>% summarise(s = sum(val)) %>% 
+        replace(list = 'Number', values = c(1,2,3,4,5,6,7))
+      
+      
+      
+      #Total Bets per products
+      y <- datamart %>% pivot_longer(cols = c(TotalBets_Product1, TotalBets_Product2,TotalBets_Product4,
+                                              TotalBets_Product5, TotalBets_Product6, TotalBets_Product7, 
+                                              TotalBets_Product8, ), names_to = "var", values_to = "val")
+      
+      y$val[is.na(y$val)] <- 0
+      y <- y %>% group_by(var) %>% summarise(s = sum(val)) %>% 
+        replace(list = 'Number', values = c(1,2,3,4,5,6,7))
+      
+      
+      
+      #Total Winnings per products
+      z <- datamart %>% pivot_longer(cols = c(TotalWinnings_Product1, TotalWinnings_Product2,TotalWinnings_Product4,
+                                              TotalWinnings_Product5, TotalWinnings_Product6, TotalWinnings_Product7, 
+                                              TotalWinnings_Product8, ), names_to = "var", values_to = "val")
+      
+      z$val[is.na(z$val)] <- 0
+      z <- z %>% group_by(var) %>% summarise(s = sum(val)) %>% 
+        replace(list = 'Number', values = c(1,2,3,4,5,6,7))
+      
+      
+      
+      #Plot for aggregations based on products
+      ggplot()+
+        geom_line(data = x, aes(x= Number, y = s, color = 'green'), size = 1.5)+
+        geom_line(data = y, aes(x= Number, y = s, color = 'blue'),size = 1.5)+
+        geom_line(data = z, aes(x= Number, y = s, color = 'red'),size = 1.5)+
+        scale_x_continuous(breaks = c(1,2,3,4,5,6,7), name = 'Products', labels = c('Sports book fixed-odd',
+                                                                                    'Sports book live-action',
+                                                                                    'Casino BossMedia',
+                                                                                    'Supertoto',
+                                                                                    'Games VS',
+                                                                                    'Games bwin',
+                                                                                    'Casino Chartwell'))+
+        scale_y_continuous(breaks = c(0,10000000,20000000,30000000), name = 'Monetary Value')+
+        theme(axis.text.x=element_text(angle=90, hjust=1))+
+        scale_fill_identity(guide = 'legend')+
+        scale_colour_manual(name = 'Line', values =c('green'='green','blue'='blue', 'red'='red'), 
+                            labels = c('Total Stakes','Total Bets', 'Total Winnings'))
+
+```
+
+As for Poker we can observe the total buy versus the total sell:
+
+```{r echo=FALSE, fig.align = 'center'}
+ggplot(datamart, aes(x = totalpoker_buy, y = totalpoker_sell, color = Gender), size = 10)+
+        geom_point()+
+        ggtitle('Total Poker buy vs Total poker sell')
+
+```
+
+## Customer Segmentation
+### RFM Model
+
+For marketing purposes, customers were segmented into 4 different levels: Platinum, Gold, Silver, and Bronze. This way, we can observe Platinum as our "ideal" customer and Bronze as our "non-ideal". 
+
+In order to segment our Users, we analyzed their game transaction behavior with an RFM model. For purposes of the analysis, the period comprehends February 2005 to September 2005.
+
+* Recency: number of days since last day played(or last transaction for poker)
+* Frequency: count of days with game activity during the given period (or number of transactions made, for poker)
+* Monetary Value: Lifetime Value of the player (how much profit is the User making for the Casino?)
+
+To do so, first we took our ‘today’ date of the period as September 30 of 2005. The date difference within the account's last day of play and the (today) date would show us the recency. Then, simply by counting the number of days played per User during the period, we calculated the frequency. Finally, we subtracted the total amount of stakes minus the user's winnings (or total buy minus total sell in the case of poker) per account to calculate monetary value of each User.
+
+
+Following, we had to assign levels for each RFM value, given that they are not comparable between each other. To do so, we used a percentile approach. By dividing the range of values into 4 groups (percentiles), we assigned 4 different levels to each RFM value, where 1 is the worst and 4 is the best. For example, in the table below we can observe that those values with a recency of 0 have an r_level of 4, meaning that it’s been 0 days since their last transaction (which gives them the highest score of 4). 
+
+```{r echo=FALSE}
+
+rfm <- datamart %>% select(1, 81, 82, 85, 87:91)
+rfm$lifetimevalue <- round(rfm$lifetimevalue, digits = 2)
+head(rfm)
+
+
+```
+
+Then, by summing the RFM values we can obtain a total RFM Score and we can segment each account on a particular level. In this case we applied the following criteria:
+
+* Bronze Account: RFM score lower than 7
+* Silver Account: RFM score of 7 or higher
+* Gold Account: RFM score of 9 or higher
+* Platinum Account: RFM score of 11 or higher
+
+With the applied criteria, we could easily segment our accounts into groups of client types as shown below:
+
+
+```{r echo=FALSE}
+table(datamart$customer_level)
+```
+
+```{r echo=FALSE, fig.align = 'center'}
+ggplot(datamart %>% filter(is.na(customer_level)==0),aes(x = customer_level, fill = customer_level ))+
+        geom_bar()+
+        ggtitle("Users segmented by levels")
+```
+
+## Visualization by Customer Level
+
+
+```{r echo=FALSE, warning=FALSE, figures-side2, fig.show="hold", out.width="50%"}
+
+datamart %>% filter(is.na(customer_level)==0, 
+                          is.na(poker_ltv)==0) %>% group_by(customer_level)%>%
+        summarise(AverageLifetimevalue = mean(poker_ltv))%>% arrange(AverageLifetimevalue)%>%
+        replace(list = 'Number', values = c(1,2,3,4))%>%
+        ggplot(aes(x= Number, y= AverageLifetimevalue))+
+        geom_col()+
+        ggtitle('Average life time value by Customer level for poker')+
+        scale_x_continuous(name = 'Customer Level',breaks = c(1,2,3,4), labels = c('Bronze', 'Silver', 'Gold', 'Platinum'))+
+        scale_y_continuous(name = 'Average Life time value')
+
+datamart %>% filter(is.na(customer_level)==0, 
+                          is.na(poker_frequency)==0) %>% group_by(customer_level)%>%
+        summarise(Averagefrequency = mean(poker_frequency))%>% arrange(Averagefrequency)%>%
+        replace(list = 'Number', values = c(1,2,3,4))%>%
+        ggplot(aes(x= Number, y= Averagefrequency))+
+        geom_col()+
+        ggtitle('Average frequency of play by customer level for poker game')+
+        scale_x_continuous(name = 'Customer Level',breaks = c(1,2,3,4), labels = c('Bronze', 'Silver', 'Gold', 'Platinum'))+
+        scale_y_continuous(name = 'Average frequency')
+
+```
+
+```{r echo=FALSE, fig.align = 'center'}
+datamart %>% filter(is.na(customer_level)==0, 
+                          is.na(profitmargin)==0) %>% group_by(customer_level)%>%
+        summarise(Averageprofit = mean(profitmargin))%>% arrange(Averageprofit)%>%
+        replace(list = 'Number', values = c(1,2,3,4))%>%
+        ggplot(aes(x= Number, y= Averageprofit))+
+        geom_line()+
+        ggtitle('Average profit by customer level')+
+        scale_x_continuous(name = 'Customer Level',breaks = c(1,2,3,4), labels = c('Bronze', 'Silver', 'Gold', 'Platinum'))+
+        scale_y_continuous(name = 'Average profit')
+```
