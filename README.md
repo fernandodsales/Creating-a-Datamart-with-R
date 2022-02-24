@@ -9,34 +9,6 @@ unique User ID per row.
 In total, there are 91 columns with 42647 unique users in the datamart,
 as shown in the next overview.
 
-## Data overview
-
-``` r
-head(datamart)
-```
-
-    ##     UserID    RegDate   FirstPay   FirstAct    FirstSp    FirstCa FirstGa
-    ## 1: 1324354 2005-02-01 2005-02-24 2005-02-24 2005-02-24       <NA>    <NA>
-    ## 2: 1324355 2005-02-01 2005-02-01 2005-02-01 2005-02-01       <NA>    <NA>
-    ## 3: 1324356 2005-02-01 2005-02-01 2005-02-02 2005-02-02       <NA>    <NA>
-    ## 4: 1324358 2005-02-01 2005-02-01 2005-02-01 2005-02-01       <NA>    <NA>
-    ## 5: 1324360 2005-02-01 2005-02-02 2005-02-02 2005-02-02 2005-02-03    <NA>
-    ## 6: 1324362 2005-02-01 2005-02-11 2005-02-11 2005-02-11       <NA>    <NA>
-    ##       FirstPo Gender Country   Application Language DaysBeforePay
-    ## 1:       <NA>      M Germany  BETANDWIN.DE   German            23
-    ## 2: 2005-06-11      M  Greece BETANDWIN.COM    Greek             0
-    ## 3:       <NA>      M Germany  BETANDWIN.DE   German             0
-    ## 4:       <NA>      M  Sweden BETANDWIN.COM  English             0
-    ## 5:       <NA>      M  Turkey BETEUROPE.COM  Turkish             1
-    ## 6:       <NA>      M Germany  BETANDWIN.DE   German            10
-    ##    TotalStakes_Product1 TotalWinnings_Product1 TotalBets_Product1
-    ## 1:           10137.3300             10224.1200                236
-    ## 2:             400.8600               453.3000                231
-    ## 3:             686.1900               285.5100                 98
-    ## 4:             247.6971               153.8756                  7
-    ## 5:              59.9993                39.9564                 40
-    ## 6:              22.0000                 0.0000                  7
-
 
 ## General User Overview
 
